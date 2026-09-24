@@ -50,16 +50,76 @@ A simple front-end coffee shop website, containerized with Docker and deployed o
 
 ### Step 3: Containerize Application & Push to ECR
 1. Make ECR repository:
-2. Build DOcker image: 
+2. Build DOcker image & push to ECR repo with terminal commands:
+   ```bash
+      docker tag coffee-website:latest <my acc ID>.dkr.ecr.eu-north-1.amazonaws.com/coffee-website:latest
+      docker push <my acc ID>.dkr.ecr.eu-north-1.amazonaws.com/coffee-website:latest
+   ```
+<img width="907" height="692" alt="image" src="https://github.com/user-attachments/assets/d671fe28-8bb7-420a-aab8-d6bd02ca48bb" />
 
-### Authenticate Docker with Amazon ECR registry:
- ```bash
-   aws ecr get-login-password --region <YOUR_REGION> | docker login --username AWS --password-stdin <ACCOUNT_ID>.dkr.ecr.<YOUR_REGION>.amazonaws.com
-```
-### Tagging and pushing the image
-```bash
-   docker tag my-app:latest <ACCOUNT_ID>.dkr.ecr.<YOUR_REGION>[.amazonaws.com/my-app:latest](https://.amazonaws.com/my-app:latest)
-   docker push <ACCOUNT_ID>.dkr.ecr.<YOUR_REGION>[.amazonaws.com/my-app:latest](https://.amazonaws.com/my-app:latest)
-```
+### Step 4: Create DB with RDS
+1. **DB Subnet Group:** Create a DB Subnet Group selecting the two private data subnets created in Step 1 across different Availability Zones.
+2. **Database Instance:** 
+   * Launch an **Amazon RDS MySQL** instance using the standard tier or Free Tier options.
+   * Attach the `data-sg` security group to allow inbound traffic on port `3306` exclusively from `app-sg`.
+   * Configure the database credentials, default database name, and initial settings required by your application.
+
+---
+
+### Step 5: Configure Application Load Balancer & Target Group
+1. **Target Group Creation:**
+   * Create a Target Group with target type set to **IP addresses** (required for ECS Fargate `awsvpc` network mode).
+   * Set protocol to **HTTP** and port to `80`.
+   * Configure health checks pointing to your application's index route (`/`).
+2. **Application Load Balancer (ALB) Setup:**
+   * Create an Internet-facing Application Load Balancer inside your VPC.
+   * Select the **2 Public Subnets** across different Availability Zones for high availability.
+   * Attach the `ALB Security Group` (`alb-sg`).
+   * Add a listener on HTTP port `80` that forwards incoming traffic to the Target Group created above.
+
+---
+
+### Step 6: Create ECS Cluster & Task Definition
+1. **ECS Cluster:**
+   * Create a new Amazon ECS Cluster choosing the **AWS Fargate (serverless)** infrastructure type.
+2. **Task Definition:**
+   * Register a new Task Definition with launch type set to **FARGATE**.
+   * Specify CPU and Memory allocations based on application needs (e.g., 0.5 vCPU, 1 GB RAM).
+   * Ensure the **Task Execution Role** (`ecsTaskExecutionRole`) has permissions to pull images from Amazon ECR and publish logs to Amazon CloudWatch.
+   * Add a container specification:
+     * **Image URI:** `<my acc ID>.dkr.ecr.eu-north-1.amazonaws.com/coffee-website:latest`
+     * **Port Mapping:** Map container port `80` (HTTP).
+     * **Environment Variables:** Pass database connection details (DB Host/Endpoint, DB Name, DB User, DB Password) if required by the application.
+
+---
+
+### Step 7: Deploy ECS Fargate Service
+1. Create an **ECS Service** under your cluster:
+   * Select your Task Definition and desired number of tasks (e.g., `2` tasks for high availability across AZs).
+   * **Networking Configuration:** Select your VPC and assign the **2 Private Subnets**.
+   * Attach the `app-sg` security group to the tasks.
+   * Enable **Auto-assign Public IP** as `DISABLED` so tasks run securely in private subnets.
+2. **Load Balancer Integration:**
+   * Link the service to the Application Load Balancer and select the existing Target Group.
+   * Map the container port `80` to the ALB target group.
+
+---
+
+### Step 8: Verification & Testing
+1. Navigate to the **EC2 Load Balancers** dashboard and select your Application Load Balancer.
+2. Copy the **DNS Name** of the ALB.
+3. Paste the DNS endpoint into your browser to verify that the Coffee Shop website loads correctly and connects to the database.
+
+---
+
+## 🧹 Resource Teardown & Cleanup
+
+To avoid ongoing charges on AWS, all resources were torn down in the following order:
+
+1. **ECS Service & Cluster:** Scaled down service tasks to `0`, deleted the ECS Service, and deleted the ECS Cluster.
+2. **Task Definitions & ECR:** Deregistered Task Definitions and deleted images/repositories in Amazon ECR.
+3. **Application Load Balancer:** Deleted the ALB and Target Group.
+4. **RDS Instance:** Deleted the MySQL RDS database instance and snapshot (if applicable), followed by the DB Subnet Group.
+5. **VPC Infrastructure:** Deleted Internet Gateways, NAT Gateways (if applicable), Route Tables, Subnets, Security Groups, and the custom VPC.
 
 

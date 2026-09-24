@@ -40,17 +40,17 @@ A simple front-end coffee shop website, containerized with Docker and deployed o
 
 ### Step 2: Configure Security Groups
 1. **ALB Security Group:**
-   * **Inbound:** HTTP (Port `80`) / HTTPS (Port `443`) from `0.0.0.0/0`.
-2. **ECS Task Security Group:**
-   * **Inbound:** Container application port (e.g., Port `80` or `8080`) restricted **only** to the ALB Security Group ID.
+   * **Inbound:** HTTP (Port `80`).
+2. **app-sg:**
+   * **Inbound:** HTTP (Port `80`).
+3. **data-sg:**
+   * **Inbound:** MySQL/Aurora (Port `3306`), source-> app-sg
 
 ---
 
 ### Step 3: Containerize Application & Push to ECR
-1. Build your local Docker image:
-   ```bash
-   docker build -t my-app .
-   ```
+1. Make ECR repository:
+2. Build DOcker image: 
 
 ### Authenticate Docker with Amazon ECR registry:
  ```bash

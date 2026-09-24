@@ -1,12 +1,11 @@
-# official php image with apache
-FROM php:7.4-apache
+FROM php:8.2-apache
 
-# Install mysqli and upgrade (required lib by our code to do database operations)
+# Set non-interactive mode to prevent prompt freezes
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install mysqli extension
 RUN docker-php-ext-install mysqli && docker-php-ext-enable mysqli
-RUN apt-get update && apt-get upgrade -y
 
-# Copy code into image
-COPY . /var/www/html
-
-# Apache will run on port 80
-EXPOSE 80
+# Update package lists cleanly
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*

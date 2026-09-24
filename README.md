@@ -31,7 +31,8 @@ A simple front-end coffee shop website, containerized with Docker and deployed o
 2. Create **2 Public Subnets** (across different AZs) and **2 Private Subnets**.
 3. Attach an **Internet Gateway (IGW)** to the VPC and configure route tables for public routing.
    #### structure of the vpc:
-   <img width="1898" height="761" alt="image" src="https://github.com/user-attachments/assets/283cc8b9-9562-43f7-9db0-550b969de0d5" />
+   <img width="1331" height="443" alt="image" src="https://github.com/user-attachments/assets/01d23256-033e-4548-9632-7f0dc48e0a7d" />
+
 
 
 
